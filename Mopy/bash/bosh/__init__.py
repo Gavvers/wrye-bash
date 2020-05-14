@@ -2462,7 +2462,9 @@ class ModInfos(FileInfos):
         """Returns a dirty message from LOOT."""
         if self.table.getItem(modname, 'ignoreDirty', False):
             return False, u''
-        return lootDb.getDirtyMessage(modname, self)
+        if lootDb.is_plugin_dirty(modname, self):
+            return True, u'Contains dirty edits, needs cleaning.'
+        return False, u''
 
     def ini_files(self):
         iniFiles = self._plugin_inis.values() # in active order
