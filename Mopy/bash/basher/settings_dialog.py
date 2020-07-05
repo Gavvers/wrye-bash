@@ -27,7 +27,7 @@ import webbrowser
 
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
-from .. import balt, barb, bass, bosh, bush, env, exception
+from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import colors, Link, Resources
 from ..bolt import deprint, GPath
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
@@ -1020,6 +1020,81 @@ class BackupsPage(_AFixedPage):
                         self.delete_backup_btn):
             ctx_btn.enabled = btns_enabled
 
+# General ---------------------------------------------------------------------
+class GeneralPage(_AScrollablePage):
+    """Houses settings that didn't fit anywhere else."""
+    _all_encodings = {
+        _(u'Automatic'): None,
+        _(u'Chinese (Simplified)'): u'gbk',
+        _(u'Chinese (Traditional)'): u'big5',
+        _(u'Russian'): u'cp1251',
+        _(u'Japanese (Shift_JIS)'): u'cp932',
+        _(u'UTF-8'): u'utf-8',
+        _(u'Western European (English, French, German, etc)'): u'cp1252',
+    }
+    _encodings_reverse = {v: k for k, v in _all_encodings.iteritems()}
+    _setting_ids = {u'managed_game', u'plugin_encoding'}
+
+    def __init__(self, parent, page_desc):
+        super(GeneralPage, self).__init__(parent, page_desc)
+        self._managed_game = DropDown(self, value=bush.game.displayName,
+            choices=sorted(bush.foundGames), auto_tooltip=False)
+        self._managed_game.tooltip = _(u'Changes which game Wrye Bash is '
+                                       u'managing.')
+        self._managed_game.on_combo_select.subscribe(self._on_managed_game)
+        self._plugin_encoding = DropDown(self, value=self._current_encoding,
+            choices=sorted(self._all_encodings), auto_tooltip=False)
+        self._plugin_encoding.tooltip = _(u'Changes the encoding Wrye Bash '
+                                          u'will use to read and write '
+                                          u'plugins.')
+        self._plugin_encoding.on_combo_select.subscribe(self._on_plugin_enc)
+        VLayout(border=6, spacing=3, item_expand=True, items=[
+            self._panel_text,
+            HBoxedLayout(self, title=_(u'Game'), items=[
+                VLayout(spacing=6, items=[
+                    HLayout(spacing=6, items=[
+                        Label(self, _(u'Managed Game:')), self._managed_game,
+                    ]),
+                    HLayout(spacing=6, items=[
+                        Label(self, _(u'Plugin Encoding:')),
+                        self._plugin_encoding,
+                    ]),
+                ]),
+            ]),
+        ]).apply_to(self)
+
+    @property
+    def _current_encoding(self):
+        return self._encodings_reverse[bass.settings[u'bash.pluginEncoding']]
+
+    def _on_managed_game(self, new_game):
+        self._mark_setting_changed(u'managed_game',
+            new_game != bush.game.displayName)
+
+    def _on_plugin_enc(self, new_enc):
+        self._mark_setting_changed(u'plugin_encoding',
+            new_enc != self._current_encoding)
+
+    def on_apply(self):
+        # Managed Game
+        if self._is_changed(u'managed_game') and balt.askContinue(self,
+                    _(u'Switching games this way will simply relaunch this '
+                      u'Wrye Bash installation with the -o command line '
+                      u'switch.') + u'\n\n' +
+                    _(u'That means manually added application launchers in '
+                      u'the status bar will not change after switching.'),
+                    u'bash.switch_games_warning.continue'):
+            chosen_game = self._managed_game.get_value()
+            self._request_restart(
+                _(u'Managed Game: %s') % chosen_game,
+                ['--oblivionPath', bush.game_path(chosen_game).s])
+        # Plugin Encoding
+        chosen_encoding = self._all_encodings[
+            self._plugin_encoding.get_value()]
+        bass.settings[u'bash.pluginEncoding'] = chosen_encoding
+        bolt.pluginEncoding = chosen_encoding
+        super(GeneralPage, self).on_apply()
+
 # Trusted Binaries ------------------------------------------------------------
 class TrustedBinariesPage(_AFixedPage):
     """Change which binaries are trusted and which aren't."""
@@ -1189,6 +1264,7 @@ _settings_pages = {
         _(u'Status Bar'): StatusBarPage,
     },
     _(u'Backups'): BackupsPage,
+    _(u'General'): GeneralPage,
     _(u'Trusted Binaries'): TrustedBinariesPage,
 }
 
@@ -1210,6 +1286,8 @@ _page_descriptions = {
     _(u'Confirmations'):
         _(u"Enable or disable popups with a 'Don't show this in the future' "
           u'option.'),
+    _(u'General'):
+        _(u'Change various general settings.'),
     _(u'Trusted Binaries'):
         _(u'Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted '
           u'binaries will be skipped by BAIN when installing packages.')

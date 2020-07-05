@@ -25,9 +25,8 @@
 from __future__ import print_function
 
 from .settings_dialog import SettingsDialog
-from .. import bush, balt, bass, bolt, env
-from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
-    BoolLink, Link
+from .. import balt, bolt, env
+from ..balt import ItemLink, AppendableLink, CheckLink, BoolLink, Link
 from ..bolt import deprint
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 
@@ -35,70 +34,6 @@ __all__ = [u'GlobalSettingsMenu']
 
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------
-#------------------------------------------------------------------------------
-class Settings_PluginEncodings(MenuLink):
-    _plugin_encodings = {
-        'gbk': _(u'Chinese (Simplified)'),
-        'big5': _(u'Chinese (Traditional)'),
-        'cp1251': _(u'Russian'),
-        'cp932': _(u'Japanese (Shift_JIS)'),
-        'utf-8': _(u'UTF-8'),
-        'cp1252': _(u'Western European (English, French, German, etc)'),
-        }
-    def __init__(self):
-        super(Settings_PluginEncodings, self).__init__(_(u'Plugin Encoding'))
-        self.links.append(Settings_PluginEncoding(_(u'Automatic'),None))
-        # self.links.append(SeparatorLink())
-        enc_name = sorted(self._plugin_encodings.items(), key=lambda x: x[1])
-        for encoding,name in enc_name:
-            self.links.append(Settings_PluginEncoding(name,encoding))
-
-#------------------------------------------------------------------------------
-class Settings_PluginEncoding(RadioLink):
-    def __init__(self,name,encoding):
-        super(Settings_PluginEncoding, self).__init__()
-        self._text = name
-        self.encoding = encoding
-        self._help = _(u"Select %(encodingname)s encoding for Wrye Bash to use."
-            ) % ({'encodingname': self._text})
-
-    def _check(self): return self.encoding == bass.settings[
-        'bash.pluginEncoding']
-
-    def Execute(self):
-        bass.settings['bash.pluginEncoding'] = self.encoding
-        bolt.pluginEncoding = self.encoding
-
-#------------------------------------------------------------------------------
-class Settings_Games(MenuLink):
-
-    def __init__(self):
-        super(Settings_Games, self).__init__(_(u'Game'))
-        for disp_name in bush.foundGames:
-            self.links.append(_Settings_Game(disp_name))
-
-class _Settings_Game(RadioLink):
-    def __init__(self,game):
-        super(_Settings_Game, self).__init__()
-        self._text = game
-        self._help = _(u"Restart Wrye Bash to manage %(game)s.") % (
-            {'game': self._text})
-
-    def _check(self): return self._text == bush.game.displayName
-
-    def Execute(self):
-        if self._check(): return
-        if not balt.askContinue(Link.Frame,
-                                _(u'Note: Switching games this way will '
-                                  u'simply relaunch this Wrye Bash '
-                                  u'installation with the -o command line '
-                                  u'switch.\n\nThat means manually added '
-                                  u'application launchers in the status bar '
-                                  u'will not change after switching.'),
-                                'bash.switch_games_warning.shown'):
-            return
-        Link.Frame.Restart(['--oblivionPath', bush.game_path(self._text).s])
-
 #------------------------------------------------------------------------------
 class Settings_UseAltName(BoolLink):
     _text, key, _help = _(u'Use Alternate Wrye Bash Name'), 'bash.useAltName',\
