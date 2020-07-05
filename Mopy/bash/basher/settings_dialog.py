@@ -710,7 +710,7 @@ class StatusBarPage(_AScrollablePage):
         # Used to retrieve the Link object for hiding/unhiding a button
         self._tip_to_links = {}
         # GUI/Layout definition
-        self._show_app_ver_chk = CheckBox(self, label=_(u'Show App Version'),
+        self._show_app_ver_chk = CheckBox(self, _(u'Show App Version'),
             chkbx_tooltip=_(u'Show/hide version numbers for buttons on the '
                             u'status bar.'),
             checked=bass.settings['bash.statusbar.showversion'])
@@ -1033,7 +1033,7 @@ class GeneralPage(_AScrollablePage):
         _(u'Western European (English, French, German, etc)'): u'cp1252',
     }
     _encodings_reverse = {v: k for k, v in _all_encodings.iteritems()}
-    _setting_ids = {u'managed_game', u'plugin_encoding'}
+    _setting_ids = {u'deprint_on', u'managed_game', u'plugin_encoding'}
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
@@ -1048,6 +1048,11 @@ class GeneralPage(_AScrollablePage):
                                           u'will use to read and write '
                                           u'plugins.')
         self._plugin_encoding.on_combo_select.subscribe(self._on_plugin_enc)
+        self._deprint_checkbox = CheckBox(self, _(u'Debug Mode'),
+            chkbx_tooltip=_(u'Turns on extra debug prints to help debug an '
+                            u'error or just for advanced testing.'),
+            checked=bolt.deprintOn)
+        self._deprint_checkbox.on_checked.subscribe(self._on_deprint)
         VLayout(border=6, spacing=3, item_expand=True, items=[
             self._panel_text,
             HBoxedLayout(self, title=_(u'Game'), items=[
@@ -1061,11 +1066,19 @@ class GeneralPage(_AScrollablePage):
                     ]),
                 ]),
             ]),
+            HBoxedLayout(self, title=_(u'Miscellaneous'), items=[
+                VLayout(spacing=6, items=[
+                    self._deprint_checkbox,
+                ]),
+            ]),
         ]).apply_to(self)
 
     @property
     def _current_encoding(self):
         return self._encodings_reverse[bass.settings[u'bash.pluginEncoding']]
+
+    def _on_deprint(self, checked):
+        self._mark_setting_changed(u'deprint_on', checked != bolt.deprintOn)
 
     def _on_managed_game(self, new_game):
         self._mark_setting_changed(u'managed_game',
@@ -1093,6 +1106,10 @@ class GeneralPage(_AScrollablePage):
             self._plugin_encoding.get_value()]
         bass.settings[u'bash.pluginEncoding'] = chosen_encoding
         bolt.pluginEncoding = chosen_encoding
+        # Debug Mode
+        deprint(u'Debug Printing: Off')
+        bolt.deprintOn = self._deprint_checkbox.is_checked
+        deprint(u'Debug Printing: On')
         super(GeneralPage, self).on_apply()
 
 # Trusted Binaries ------------------------------------------------------------

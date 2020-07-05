@@ -57,19 +57,6 @@ class Settings_UAC(AppendableLink, ItemLink):
                 _(u'Administrator Mode'), ):
             Link.Frame.Restart(['--uac'])
 
-class Settings_Deprint(CheckLink):
-    """Turn on deprint/delist."""
-    _text = _(u'Debug Mode')
-    _help = _(u"Turns on extra debug prints to help debug an error or just for "
-             u"advanced testing.")
-
-    def _check(self): return bolt.deprintOn
-
-    def Execute(self):
-        deprint(_(u'Debug Printing: Off'))
-        bolt.deprintOn = not bolt.deprintOn
-        deprint(_(u'Debug Printing: On'))
-
 #------------------------------------------------------------------------------
 class Settings_ShowGlobalMenu(BoolLink):
     _text = _(u'Show Global Menu')
