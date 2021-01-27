@@ -87,7 +87,7 @@ class InstallerPage(_AFomodBase):
         self._group_list = parent_installer.order_list([
             InstallerGroup(parent_installer, xml_group_obj)
             for xml_group_obj in page_object.findall(u'optionalFileGroups/*')
-        ], page_object.get(u'order', u'Ascending'))
+        ], page_object.find(u'optionalFileGroups').get(u'order', u'Ascending'))
 
     def __getitem__(self, k):
         return self._group_list[k]
