@@ -261,9 +261,9 @@ class FomodInstaller(object):
     receive a mapping of 'file source string' -> 'file destination string'.
     These are the files to be installed. This installer does not install or
     provide any way to do so, leaving that at your discretion."""
-    __slots__ = (u'fomod_tree', u'fomod_name', u'file_list', u'dst_dir',
-                 u'game_version', u'_current_page', u'_previous_pages',
-                 u'_has_finished', u'installer_root')
+    __slots__ = (u'fomod_tree', u'fomod_name', u'page_list', u'file_list',
+                 u'dst_dir', u'game_version', u'_current_page',
+                 u'_previous_pages', u'_has_finished', u'installer_root')
 
     def __init__(self, mc_path, file_list, inst_root, dst_dir, game_version):
         """Creates a new FomodInstaller with the specified properties.
@@ -277,6 +277,7 @@ class FomodInstaller(object):
         :param game_version: version of the game launch exe"""
         self.fomod_tree = etree.parse(mc_path)
         self.fomod_name = self.fomod_tree.findtext(u'moduleName', u'').strip()
+        self.page_list = None
         self.file_list = file_list
         self.installer_root = inst_root
         self.dst_dir = dst_dir
@@ -289,23 +290,25 @@ class FomodInstaller(object):
         root_conditions = self.fomod_tree.find(u'moduleDependencies')
         if root_conditions is not None:
             self.test_conditions(root_conditions)
-        first_page = self.fomod_tree.find(u'installSteps/installStep')
-        if first_page is None:
-            return None
-        self._current_page = InstallerPage(self, first_page)
-        return self._current_page
-
-    def move_to_next(self, user_selection):
-        if self._has_finished or self._current_page is None:
-            return None
-        sort_list = [option for grp in self._current_page for option in grp]
-        sorted_selection = sorted(user_selection, key=sort_list.index)
-        self._previous_pages[self._current_page] = sorted_selection
-        ordered_pages = self.order_list(
+        self.page_list = self.order_list(
             self.fomod_tree.findall(u'installSteps/installStep'),
             self.fomod_tree.find(u'installSteps').get(u'order', u'Ascending'))
-        current_index = ordered_pages.index(self._current_page.page_object)
-        for next_page in ordered_pages[current_index + 1:]:
+        # first_page = self.fomod_tree.find(u'installSteps/installStep')
+        return self.move_to_next(None)
+
+    def move_to_next(self, user_selection):
+        current_index = -1
+        if self._has_finished:
+            return None
+        if self._current_page is not None:
+            current_index = self.page_list.index(
+                self._current_page.page_object)
+        if self._current_page is not None and user_selection is not None:
+            sort_list = [option for grp in self._current_page
+                         for option in grp]
+            sorted_selection = sorted(user_selection, key=sort_list.index)
+            self._previous_pages[self._current_page] = sorted_selection
+        for next_page in self.page_list[current_index + 1:]:
             try:
                 page_conditions = next_page.find(u'visible')
                 if page_conditions is not None:
@@ -322,13 +325,13 @@ class FomodInstaller(object):
 
     def move_to_prev(self):
         self._has_finished = False
-        try:
+        if not self._previous_pages:
+            self._current_page = None
+            return None, None
+        else:
             prev_page, prev_selected = self._previous_pages.popitem(last=True)
             self._current_page = prev_page
             return prev_page, prev_selected
-        except KeyError:
-            self._current_page = None
-            return None, None
 
     def has_prev(self):
         return bool(self._previous_pages)
