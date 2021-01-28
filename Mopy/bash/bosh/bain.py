@@ -2683,6 +2683,8 @@ class InstallersData(DataStore):
         restores = bolt.LowerDict()
         cede_ownership = collections.defaultdict(set)
         for installer in self.sorted_values(reverse=True):
+            if not removes:
+                break
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.is_active:
