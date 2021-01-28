@@ -209,7 +209,7 @@ class _FomodFileInfo(object):
             if file_src.endswith((u'/', u'\\')):
                 file_src = file_src[:-1]
             file_src = GPath(file_src)
-            file_dest = file_object.get(u'destination', None)
+            file_dest = u'' + file_object.get(u'destination', None)
             if file_dest is None:  # omitted destination
                 file_dest = file_src
             elif file_object.tag == u'file' and (
