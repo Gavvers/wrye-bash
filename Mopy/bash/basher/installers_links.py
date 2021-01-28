@@ -45,7 +45,8 @@ __all__ = [u'Installers_SortActive', u'Installers_SortProjects',
            u'Installers_ConflictsReportShowsLower',
            u'Installers_ConflictsReportShowBSAConflicts',
            u'Installers_WizardOverlay', u'Installers_GlobalSkips',
-           u'Installers_GlobalRedirects', u'Installers_FullRefresh']
+           u'Installers_GlobalRedirects', u'Installers_FullRefresh',
+           u'Installers_ForceAnnealAll']
 
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
@@ -196,6 +197,25 @@ class Installers_AnnealAll(Installers_Link):
         try:
             with balt.Progress(_(u'Annealing...'),u'\n'+u' '*60) as progress:
                 self.idata.bain_anneal(None, ui_refresh, progress=progress)
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
+
+class Installers_ForceAnnealAll(Installers_Link):
+    """Anneal all packages."""
+    _text = _(u'Force Anneal All')
+    _help = _(u'Install any missing and mismatched files (for active '
+              u'packages) and update the contents of the %s folder to account '
+              u'for all install order and configuration changes.'
+              ) % bush.game.mods_dir
+
+    @balt.conversation
+    def Execute(self):
+        """Force Anneal all packages."""
+        ui_refresh = [False, False]
+        try:
+            with balt.Progress(_(u'Annealing...'),u'\n'+u' '*60) as progress:
+                self.idata.bain_force_anneal(None, ui_refresh,
+                                             progress=progress)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 
