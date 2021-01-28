@@ -252,6 +252,7 @@ def InitInstallerLinks():
     #--Install, uninstall, etc.
     InstallersList.context_links.append(Installer_OpenReadme())
     InstallersList.context_links.append(Installer_Anneal())
+    InstallersList.context_links.append(Installer_ForceAnneal())
     InstallersList.context_links.append(
         Installer_Refresh(calculate_projects_crc=False))
     InstallersList.context_links.append(Installer_Move())

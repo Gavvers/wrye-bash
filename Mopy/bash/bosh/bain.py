@@ -2638,8 +2638,36 @@ class InstallersData(DataStore):
                 installer = self[archive]
                 self.__installer_install(installer, destFiles, index, progress,
                                          refresh_ui)
+    def bain_force_anneal(self, anPackages, refresh_ui, progress=None):
+        """Force Anneal selected packages, performs an Anneal that includes
+        mismatched files. If no packages are selected, anneal all.
+                Anneal will:
+                * Correct underrides in anPackages.
+                * Install missing files from active anPackages."""
+        def include_mismatched(installer, removes):
+            removes |= installer.underrides
+            if installer.is_active:
+                removes |= installer.missingFiles  # re-added in __restore
+                removes |= set(installer.dirty_sizeCrc)
+                removes |= installer.mismatchedFiles
+
+        self._bain_anneal(anPackages, refresh_ui, include_mismatched, progress)
 
     def bain_anneal(self, anPackages, refresh_ui, progress=None):
+        """Anneal selected packages. If no packages are selected, anneal all.
+        Anneal will:
+        * Correct underrides in anPackages.
+        * Install missing files from active anPackages."""
+        def without_mismatched(installer, removes):
+            removes |= installer.underrides
+            if installer.is_active:
+                removes |= installer.missingFiles  # re-added in __restore
+                removes |= set(installer.dirty_sizeCrc)
+
+        self._bain_anneal(anPackages, refresh_ui, without_mismatched, progress)
+
+    def _bain_anneal(self, anPackages, refresh_ui, file_selector,
+                     progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.
         Anneal will:
         * Correct underrides in anPackages.
@@ -2649,10 +2677,7 @@ class InstallersData(DataStore):
         #--Get remove/refresh files from anPackages
         removes = set()
         for installer in anPackages:
-            removes |= installer.underrides
-            if installer.is_active:
-                removes |= installer.missingFiles # re-added in __restore
-                removes |= set(installer.dirty_sizeCrc)
+            file_selector(installer, removes)
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = bolt.LowerDict()

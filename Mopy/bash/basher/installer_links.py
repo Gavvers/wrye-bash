@@ -67,7 +67,8 @@ __all__ = [u'Installer_Open', u'Installer_Duplicate',
            u'Installer_Subs_ToggleSelection',
            u'Installer_Subs_ListSubPackages', u'Installer_OpenNexus',
            u'Installer_ExportAchlist', u'Installer_Espm_JumpToMod',
-           u'Installer_Fomod', u'Installer_InstallSmart']
+           u'Installer_Fomod', u'Installer_InstallSmart',
+           u'Installer_ForceAnneal']
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -383,6 +384,25 @@ class Installer_Anneal(_NoMarkerLink):
         try:
             with balt.Progress(_(u'Annealing...'),u'\n'+u' '*60) as progress:
                 self.idata.bain_anneal(self._installables, ui_refresh,
+                                       progress)
+        except (CancelError,SkipError):
+            pass
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
+
+class Installer_ForceAnneal(_NoMarkerLink):
+    """Force Anneal all packages."""
+    _text = _(u'Force Anneal')
+    _help = _(u'Install any missing and mismatched files (for active packages) '
+              u'and update the contents of the %s folder to account for '
+              u'install order and configuration changes in the selected '
+              u'package(s).') % bush.game.mods_dir
+
+    def Execute(self):
+        ui_refresh = [False, False]
+        try:
+            with balt.Progress(_(u'Annealing...'),u'\n'+u' '*60) as progress:
+                self.idata.bain_force_anneal(self._installables, ui_refresh,
                                        progress)
         except (CancelError,SkipError):
             pass
